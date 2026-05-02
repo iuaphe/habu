@@ -9,16 +9,63 @@ pub struct ProgramParser;
 
 fn main() {
     let source_contents = read_to_string("hello.habu").unwrap();
+    let source_contents = insert_dents(&source_contents);
+    println!("{source_contents}");
     match ProgramParser::parse(Rule::program, &source_contents) {
         Ok(mut pairs) => {
             let pair = pairs.next().unwrap();
-            // println!("{pair}");
-            println!("{:?}", program(pair));
+            println!("{pair}");
+            // println!("{:?}", program(pair));
         }
         Err(err) => {
             println!("{}", err);
         }
     }
+}
+
+fn insert_dents(source: &String) -> String {
+    let lines = source.lines();
+    let mut out_lines = vec![];
+    let mut level = 0;
+    for line in lines {
+        if line.chars().all(|c| c == ' ') {
+            // skip!
+        } else {
+            let mut i = 0;
+            let chars: Vec<char> = line.chars().collect();
+            while i < line.len() && chars[i] == ' ' {
+                i += 1;
+            }
+            let this_level = i;
+            if this_level > level {
+                out_lines.push(format!(
+                    "{}{}",
+                    "[INDENT]".repeat((this_level - level) / 4),
+                    // line[i..].to_string()
+                    line,
+                ));
+            } else if this_level < level {
+                out_lines.push(format!(
+                    "{}{}",
+                    "[DEDENT]".repeat((level - this_level) / 4),
+                    // line[i..].to_string()
+                    line,
+                ));
+            } else {
+                out_lines.push(format!(
+                    "{}{}",
+                    "[NODENT]",
+                    // line[i..].to_string()
+                    line,
+                ));
+            }
+            level = this_level;
+        }
+    }
+    if level > 0 {
+        out_lines.push(format!("{}", "[DEDENT]".repeat(level / 4)));
+    }
+    out_lines.join("\n")
 }
 
 #[derive(Debug)]

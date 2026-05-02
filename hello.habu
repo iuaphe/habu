@@ -1,15 +1,10 @@
-def fizz-buzz(n) {
-    for i in r(0, n] {
+def fizz-buzz(n):
+    for x in r(0, n]:
         result = ""
-        if i % 3 == 0 {
+        if i % 3 == 0:
             result = result + "Fizz"
-        }
-        if i % 5 == 0 {
+        if i % 5 == 0:
             result = result + "Buzz"
-        }
-        if len(i) == 0 {
+        if len(i) == 0:
             result = str(i)
-        }
         print result
-    }
-}
