@@ -1,0 +1,30 @@
+idMidChar = { ASCII_ALPHANUMERIC | "-"}
+idEndChar = { ASCII_ALPHA }
+idSuffix = { idMidChar ~ idSuffix | idEndChar }
+id = { idEndChar ~ idSuffix? }
+number = { NUMBER+ }
+string = { "\"" ~ ASCII_ALPHA* ~ "\""}
+range = { "r" ~ ("[" | "(") ~ expr ~ ", " ~ expr ~ ("]" | ")") }
+// id = { idMidChar+ }
+opChar = { "!" | "@" | "#" | "$" | "%" | "^" | "&" | "*" | ":" | ";" | "/" | "?" | "|" | "`" | "~" | ">" | "<" | "+" | "-" | "=" }
+op = { opChar+ }
+grouping = { "(" ~ expr ~ ")" }
+exprAtom = { functionCall | string | range | grouping | id | number }
+preOpExpr = { op ~ exprAtom ~ (" " ~ op ~ " " ~ expr)?  }
+sufOpExpr = { exprAtom ~ op ~ (" " ~ op ~ " " ~ expr)?  }
+bareExpr = { exprAtom ~ (" " ~ op ~ " " ~ expr)?  }
+expr = { preOpExpr | sufOpExpr | bareExpr }
+declaration = { "let " ~ id ~ (" = " ~ expr)? }
+assignment = { id ~ " = " ~ expr }
+expressionList = { (expr ~ (", " ~ expr)*)? }
+functionCall = { id ~ "(" ~ expressionList ~ ")"}
+functionCallStatement = { id ~ (" " ~ expressionList)? }
+ifStatement = { "if " ~ expr ~ " {\n" ~ block ~ " "* ~ "}" ~ (" else {\n" ~ block ~ " "* ~ "}")?}
+forLoop = { "for " ~ id ~ " in " ~ expr ~ " {\n" ~ block ~ " "* ~ "}" }
+statement = { ifStatement | forLoop | declaration | assignment | functionCall | functionCallStatement }
+block = { (" "* ~ statement ~ "\n")* }
+naryFunctionDefinition = { "def " ~ id ~ "(" ~ (id ~ (", " ~ id)*)? ~ ") {\n" ~ block ~ " "* ~ "}" }
+binaryFunctionDefinition = { "def " ~ id ~ " " ~ op ~ " " ~ id ~ " {\n" ~ block ~ " "* ~ "}" }
+functionDefinition = { naryFunctionDefinition | binaryFunctionDefinition }
+topLevelObject = { functionDefinition | statement | "" }
+program = { SOI ~ (topLevelObject ~ ("\n" ~ topLevelObject)*)? ~ EOI }
