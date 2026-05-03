@@ -30,5 +30,5 @@ block = { (statement ~ statementTerminator?)* }
 naryFunctionDefinition = { "def " ~ id ~ "(" ~ (id ~ (", " ~ id)*)? ~ "):" ~ indent ~ block ~ dedent }
 binaryFunctionDefinition = { "def " ~ id ~ " " ~ op ~ " " ~ id ~ ":" ~ indent ~ block ~ dedent }
 functionDefinition = { naryFunctionDefinition | binaryFunctionDefinition }
-topLevelObject = { functionDefinition | statement | "" }
-program = { SOI ~ nodent ~ (topLevelObject ~ ("\n" ~ topLevelObject)*)? ~ EOI }
+topLevelObject = { functionDefinition | statement }
+program = { SOI ~ nodent ~ topLevelObject+ ~ EOI }

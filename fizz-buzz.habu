@@ -1,12 +1,17 @@
 def main():
     for i in r(0, 1000]:
         result = ""
-        if i % 3 == 0:
+        if fizzy(i):
             result = result + "Fizz"
-        if i % 5 == 0:
+        if buzzy(i):
             result = result + "Buzz"
-        if len(result) == 0:
-            result = str(i)
-        print result
+        if len(result) > 0:
+            print result
+        else:
+            print str(i)
 
+def fizzy(x):
+    return x % 3 == 0
 
+def buzzy(x):
+    return x % 5 == 0

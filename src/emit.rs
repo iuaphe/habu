@@ -32,9 +32,9 @@ impl Emitter {
         let result = block
             .statements
             .iter()
-            .map(|s| " ".repeat(self.level * 4) + &self.statement(s))
+            .map(|s| " ".repeat(self.level * 4) + &self.statement(s) + "\n")
             .collect::<Vec<String>>()
-            .join("\n");
+            .join("");
         self.level -= 1;
         result
     }
@@ -54,9 +54,10 @@ impl Emitter {
             Statement::IfStatement { cond, then, els } => {
                 if let Some(els) = els {
                     format!(
-                        "if {}:\n{}else:\n{}",
+                        "if {}:\n{}{}else:\n{}",
                         self.expression(cond),
                         self.block(then),
+                        " ".repeat(self.level * 4),
                         self.block(els)
                     )
                 } else {
