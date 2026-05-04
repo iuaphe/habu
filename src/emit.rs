@@ -41,8 +41,12 @@ impl Emitter {
 
     fn statement(&mut self, statement: &Statement) -> String {
         match statement {
-            Statement::Assignment { target, value } => {
+            Statement::Assignment { target, operator, value } => {
+                if let Some(operator) = operator {
+                    format!("{} = {} {} {}", target, target, operator, self.expression(value))
+                } else {
                 format!("{} = {}", target, self.expression(value))
+                }
             }
             Statement::Declaration { target, value } => {
                 if let Some(value) = value {
