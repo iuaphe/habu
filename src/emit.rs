@@ -45,7 +45,7 @@ impl Emitter {
                 if let Some(operator) = operator {
                     format!("{} = {} {} {}", target, target, operator, self.expression(value))
                 } else {
-                format!("{} = {}", target, self.expression(value))
+                    format!("{} = {}", target, self.expression(value))
                 }
             }
             Statement::Declaration { target, value } => {

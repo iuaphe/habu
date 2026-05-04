@@ -1,4 +1,4 @@
-idMidChar = { ASCII_ALPHANUMERIC | "-" | "'"}
+idMidChar = { ASCII_ALPHANUMERIC | "-" | "'" | "_" | "苹果"}
 idEndChar = { ASCII_ALPHA }
 idSuffix = { idMidChar ~ idSuffix | idEndChar }
 id = { idEndChar ~ idSuffix? }
@@ -11,7 +11,7 @@ dedent = _{ whitespace* ~ "[DEDENT]" ~ whitespace* }
 nodent = _{ whitespace* ~ "[NODENT]" ~ whitespace* }
 statementTerminator = { nodent }
 opChar = { "!" | "@" | "#" | "$" | "%" | "^" | "&" | "*" | ";" | "/" | "?" | "|" | "`" | "~" | ">" | "<" | "+" | "-" | "=" }
-op = { opChar+ }
+op = { (!("= ") ~ opChar)+ }
 grouping = { "(" ~ expr ~ ")" }
 exprAtom = { functionCall | string | range | grouping | id | number }
 preOpExpr = { op ~ exprAtom ~ (" " ~ op ~ " " ~ expr)?  }
@@ -19,7 +19,7 @@ sufOpExpr = { exprAtom ~ op ~ (" " ~ op ~ " " ~ expr)?  }
 bareExpr = { exprAtom ~ (" " ~ op ~ " " ~ expr)?  }
 expr = { preOpExpr | sufOpExpr | bareExpr }
 declaration = { "let " ~ id ~ (" = " ~ expr)? }
-assignment = { id ~ " = " ~ expr }
+assignment = {id ~ " " ~ op? ~ "= " ~ expr }
 expressionList = { (expr ~ (", " ~ expr)*)? }
 functionCall = { id ~ "(" ~ expressionList ~ ")"}
 functionCallStatement = { id ~ (" " ~ expressionList)? }
