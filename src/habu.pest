@@ -14,7 +14,7 @@ indent = _{ whitespace* ~ "[INDENT]" ~ whitespace* }
 dedent = _{ whitespace* ~ "[DEDENT]" ~ whitespace* }
 nodent = _{ whitespace* ~ "[NODENT]" ~ whitespace* }
 opChar = { "!" | "@" | "#" | "$" | "%" | "^" | "&" | "*" | ";" | "/" | "?" | "|" | "`" | "~" | ">" | "<" | "+" | "-" | "=" }
-op = { (opChar ~ !("= "))+ } //this specific white space dependency seems tricky to get rid of
+op = { (!("= ") ~ opChar)+ } //this specific white space dependency seems tricky to get rid of
 grouping = { "(" ~ expr ~ ")" }
 exprAtom = { functionCall | string | range | grouping | id | number }
 preOpExpr = { op ~ exprAtom ~ (" " ~ op ~ " " ~ expr)?  }
