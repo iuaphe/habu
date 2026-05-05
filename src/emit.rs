@@ -155,7 +155,7 @@ impl Emitter {
     }
 
     fn operator_map() -> HashMap<String, String> {
-        let replacements = [("=?", "==")];
+        let replacements = [("=?", "=="), ("=/", "!="), (">_", ">="), ("<_", "<="), ("&|", "^"), ("|&", "^"), ("^", "**")];
         let mut map = HashMap::new();
         for (from, to) in &replacements {
             map.insert(from.to_string(), to.to_string());
