@@ -131,7 +131,9 @@ pub enum Expression {
     },
 }
 
-pub fn parse_program_from_source(source_contents: &String) -> Result<Program, pest::error::Error<Rule>> {
+pub fn parse_program_from_source(
+    source_contents: &String,
+) -> Result<Program, pest::error::Error<Rule>> {
     let source_contents = insert_dents(&source_contents);
     let mut pairs = ProgramParser::parse(Rule::program, &source_contents)?;
     let pair = pairs.next().expect("ERROR: Expected token");
@@ -167,13 +169,20 @@ fn block(pair: Pair<Rule>) -> Block {
 }
 
 fn func_def(pair: Pair<Rule>) -> FunctionDefinition {
-    let inner = pair.into_inner().next().expect("ERROR: Expected token in function definition");
+    let inner = pair
+        .into_inner()
+        .next()
+        .expect("ERROR: Expected token in function definition");
 
     match inner.as_rule() {
         Rule::naryFunctionDefinition => {
             let mut inner = inner.into_inner();
 
-            let name = inner.next().expect("ERROR: Expected function name").as_str().to_string();
+            let name = inner
+                .next()
+                .expect("ERROR: Expected function name")
+                .as_str()
+                .to_string();
 
             let mut parameters = Vec::new();
             let mut body = Block { statements: vec![] };
@@ -198,20 +207,38 @@ fn func_def(pair: Pair<Rule>) -> FunctionDefinition {
 }
 
 fn statement(pair: Pair<Rule>) -> Statement {
-    let inner = pair.into_inner().next().expect("ERROR: Expected statement token");
+    let inner = pair
+        .into_inner()
+        .next()
+        .expect("ERROR: Expected statement token");
     match inner.as_rule() {
         Rule::ifStatement => {
             let mut parts = inner.into_inner();
-            let cond = expression(parts.next().expect("ERROR: Expected if statement condition token"));
-            let then = block(parts.next().expect("ERROR: Expected if statement block token"));
+            let cond = expression(
+                parts
+                    .next()
+                    .expect("ERROR: Expected if statement condition token"),
+            );
+            let then = block(
+                parts
+                    .next()
+                    .expect("ERROR: Expected if statement block token"),
+            );
             let possibly_else = parts.next();
             let els = possibly_else.map(|p| block(p));
             Statement::IfStatement { cond, then, els }
         }
         Rule::forLoop => {
             let mut parts = inner.into_inner();
-            let var = parts.next().expect("ERROR: Expected forLoop var token").as_str();
-            let iterator = expression(parts.next().expect("ERROR: Expected for loop iterator token"));
+            let var = parts
+                .next()
+                .expect("ERROR: Expected forLoop var token")
+                .as_str();
+            let iterator = expression(
+                parts
+                    .next()
+                    .expect("ERROR: Expected for loop iterator token"),
+            );
             let body = block(parts.next().expect("ERROR: Expected for loop body token"));
             Statement::ForStatement {
                 var: var.to_string(),
@@ -221,21 +248,43 @@ fn statement(pair: Pair<Rule>) -> Statement {
         }
         Rule::assignment => {
             let mut parts = inner.into_inner();
-            let target = parts.next().expect("ERROR: Expected assignment target token").as_str().to_string();
+            let target = parts
+                .next()
+                .expect("ERROR: Expected assignment target token")
+                .as_str()
+                .to_string();
 
             let mut operator = None;
             if let Some(pair) = parts.peek() {
                 if pair.as_rule() == Rule::op {
-                    operator = Some(parts.next().expect("ERROR: Expected assignment operator token").as_str().to_string());
+                    operator = Some(
+                        parts
+                            .next()
+                            .expect("ERROR: Expected assignment operator token")
+                            .as_str()
+                            .to_string(),
+                    );
                 }
             }
-            let value = expression(parts.next().expect("ERROR: Expected assignment expression token"));
-            Statement::Assignment { target, operator, value }
+            let value = expression(
+                parts
+                    .next()
+                    .expect("ERROR: Expected assignment expression token"),
+            );
+            Statement::Assignment {
+                target,
+                operator,
+                value,
+            }
         }
         Rule::declaration => {
             let mut parts = inner.into_inner();
             Statement::Declaration {
-                target: parts.next().expect("ERROR: Expected declaration target token").as_str().to_string(),
+                target: parts
+                    .next()
+                    .expect("ERROR: Expected declaration target token")
+                    .as_str()
+                    .to_string(),
                 value: parts.next().map(|x| expression(x)),
             }
         }
@@ -247,32 +296,57 @@ fn statement(pair: Pair<Rule>) -> Statement {
 }
 
 fn expression_atom(pair: Pair<Rule>) -> Expression {
-    let pair = pair.into_inner().next().expect("ERROR: Expected expression token");
+    let pair = pair
+        .into_inner()
+        .next()
+        .expect("ERROR: Expected expression token");
     match pair.as_rule() {
         Rule::functionCall => Expression::FunctionCall(function_call(pair)),
         Rule::string => Expression::String(pair.as_str().to_string()),
         Rule::range => {
             let mut parts = pair.into_inner();
-            let left = Box::new(expression(parts.next().expect("ERROR: Expected range left token")));
-            let right = Box::new(expression(parts.next().expect("ERROR: Expected range right token")));
+            let left = Box::new(expression(
+                parts.next().expect("ERROR: Expected range left token"),
+            ));
+            let right = Box::new(expression(
+                parts.next().expect("ERROR: Expected range right token"),
+            ));
             Expression::Range { left, right }
         }
-        Rule::grouping => expression(pair.into_inner().next().expect("ERROR: Expected grouping token")),
+        Rule::grouping => expression(
+            pair.into_inner()
+                .next()
+                .expect("ERROR: Expected grouping token"),
+        ),
         Rule::id => Expression::Identifier(pair.as_str().to_string()),
-        Rule::number => Expression::Number(pair.as_str().to_string().parse::<i32>().expect("ERROR: Expected number token")),
+        Rule::number => Expression::Number(
+            pair.as_str()
+                .to_string()
+                .parse::<i32>()
+                .expect("ERROR: Expected number token"),
+        ),
         _ => unreachable!(),
     }
 }
 
 fn expression(pair: Pair<Rule>) -> Expression {
     // println!("exp: {}", pair);
-    let inner = pair.into_inner().next().expect("ERROR: Expected expression token");
+    let inner = pair
+        .into_inner()
+        .next()
+        .expect("ERROR: Expected expression token");
 
     let (base_expr, mut rest) = match inner.as_rule() {
         Rule::preOpExpr => {
             let mut parts = inner.into_inner();
-            let operator = parts.next().expect("ERROR: Expected preOpExpr operator token").as_str().to_string().replace("=?", "==");;
-            let base = Box::new(expression_atom(parts.next().expect("ERROR: Expected preOpExpr base token")));
+            let operator = parts
+                .next()
+                .expect("ERROR: Expected preOpExpr operator token")
+                .as_str()
+                .to_string();
+            let base = Box::new(expression_atom(
+                parts.next().expect("ERROR: Expected preOpExpr base token"),
+            ));
             (
                 Expression::UnaryOperation {
                     base,
@@ -284,8 +358,14 @@ fn expression(pair: Pair<Rule>) -> Expression {
         }
         Rule::sufOpExpr => {
             let mut parts = inner.into_inner();
-            let base = Box::new(expression_atom(parts.next().expect("ERROR: Expected sufOpExpr base token")));
-            let operator = parts.next().expect("ERROR: Expected sufOpExpr operator token").as_str().to_string().replace("=?", "==");;
+            let base = Box::new(expression_atom(
+                parts.next().expect("ERROR: Expected sufOpExpr base token"),
+            ));
+            let operator = parts
+                .next()
+                .expect("ERROR: Expected sufOpExpr operator token")
+                .as_str()
+                .to_string();
             (
                 Expression::UnaryOperation {
                     base,
@@ -297,7 +377,10 @@ fn expression(pair: Pair<Rule>) -> Expression {
         }
         Rule::bareExpr => {
             let mut parts = inner.into_inner();
-            (expression_atom(parts.next().expect("ERROR: Expected bareExpr token")), parts)
+            (
+                expression_atom(parts.next().expect("ERROR: Expected bareExpr token")),
+                parts,
+            )
         }
         _ => unreachable!(),
     };
@@ -305,8 +388,15 @@ fn expression(pair: Pair<Rule>) -> Expression {
     if rest.is_empty() {
         base_expr
     } else {
-        let operator = rest.next().expect("ERROR: Expected expression operator token").as_str().to_string().replace("=?", "==");;
-        let other_operand = expression(rest.next().expect("ERROR: Expected expression other_operand token"));
+        let operator = rest
+            .next()
+            .expect("ERROR: Expected expression operator token")
+            .as_str()
+            .to_string();
+        let other_operand = expression(
+            rest.next()
+                .expect("ERROR: Expected expression other_operand token"),
+        );
         Expression::BinaryOperation {
             left: Box::new(base_expr),
             operator,
@@ -317,7 +407,11 @@ fn expression(pair: Pair<Rule>) -> Expression {
 
 fn function_call(pair: Pair<Rule>) -> FunctionCall {
     let mut inner = pair.into_inner();
-    let name = inner.next().expect("ERROR: Expected function name token").as_str().to_string();
+    let name = inner
+        .next()
+        .expect("ERROR: Expected function name token")
+        .as_str()
+        .to_string();
 
     let mut arguments = Vec::new();
     if let Some(list_pair) = inner.next() {

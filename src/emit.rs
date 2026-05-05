@@ -1,6 +1,9 @@
+use std::collections::HashMap;
+
 use crate::parse::{Block, Expression, FunctionCall, Program, Statement, TopLevelObject};
 
 pub struct Emitter {
+    operator_map: HashMap<String, String>,
     level: usize,
 }
 
@@ -39,11 +42,25 @@ impl Emitter {
         result
     }
 
+    fn operator(&mut self, op: &String) -> String {
+        self.operator_map.get(op).unwrap_or(op).to_string()
+    }
+
     fn statement(&mut self, statement: &Statement) -> String {
         match statement {
-            Statement::Assignment { target, operator, value } => {
+            Statement::Assignment {
+                target,
+                operator,
+                value,
+            } => {
                 if let Some(operator) = operator {
-                    format!("{} = {} {} {}", target, target, operator, self.expression(value))
+                    format!(
+                        "{} = {} {} {}",
+                        target,
+                        target,
+                        self.operator(operator),
+                        self.expression(value)
+                    )
                 } else {
                     format!("{} = {}", target, self.expression(value))
                 }
@@ -118,7 +135,7 @@ impl Emitter {
                 format!(
                     "{} {} {}",
                     self.expression(&*left),
-                    operator,
+                    self.operator(operator),
                     self.expression(&*right)
                 )
             }
@@ -128,16 +145,28 @@ impl Emitter {
                 unary_type,
             } => match unary_type {
                 crate::parse::UnaryType::Before => {
-                    format!("{}{}", operator, self.expression(&*base))
+                    format!("{}{}", self.operator(operator), self.expression(&*base))
                 }
                 crate::parse::UnaryType::After => {
-                    format!("{}{}", self.expression(&*base), operator)
+                    format!("{}{}", self.expression(&*base), self.operator(operator))
                 }
             },
         }
     }
 
+    fn operator_map() -> HashMap<String, String> {
+        let replacements = [("=?", "==")];
+        let mut map = HashMap::new();
+        for (from, to) in &replacements {
+            map.insert(from.to_string(), to.to_string());
+        }
+        map
+    }
+
     pub fn new() -> Emitter {
-        Emitter { level: 0 }
+        Emitter {
+            operator_map: Emitter::operator_map(),
+            level: 0,
+        }
     }
 }
