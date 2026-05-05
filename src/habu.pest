@@ -13,9 +13,8 @@ whitespace = _{ " " | "\n" | "\r" }
 indent = _{ whitespace* ~ "[INDENT]" ~ whitespace* }
 dedent = _{ whitespace* ~ "[DEDENT]" ~ whitespace* }
 nodent = _{ whitespace* ~ "[NODENT]" ~ whitespace* }
-statementTerminator = { nodent }
 opChar = { "!" | "@" | "#" | "$" | "%" | "^" | "&" | "*" | ";" | "/" | "?" | "|" | "`" | "~" | ">" | "<" | "+" | "-" | "=" }
-op = { (!("= ") ~ opChar)+ } //this specific white space dependency seems tricky to get rid of
+op = { (opChar ~ !("= "))+ } //this specific white space dependency seems tricky to get rid of
 grouping = { "(" ~ expr ~ ")" }
 exprAtom = { functionCall | string | range | grouping | id | number }
 preOpExpr = { op ~ exprAtom ~ (" " ~ op ~ " " ~ expr)?  }
@@ -27,10 +26,10 @@ assignment = {id ~ " " ~ op? ~ "= " ~ expr }
 expressionList = { (expr ~ (", " ~ expr)*)? }
 functionCall = { id ~ "(" ~ expressionList ~ ")"}
 functionCallStatement = { id ~ (" " ~ expressionList)? }
-ifStatement = { "if " ~ expr ~ ":" ~ indent ~ block ~ dedent ~ ("else:" ~ indent ~ block ~ dedent)?}
-forLoop = { "for " ~ id ~ " in " ~ expr ~ ":" ~ indent ~ block ~ dedent }
+ifStatement = { (expr ~ " =>" ~ indent ~ block ~ "," ~ dedent ~ &(expr ~ " =>" ~ indent ~ block ~ "," ~ dedent))* ~ (expr ~ " =>" ~ indent ~ block ~ dedent)}
+forLoop = { id ~ (", " ~ id)* ~ " @ " ~ expr ~ indent ~ block ~ dedent }
 statement = { ifStatement | forLoop | declaration | assignment | functionCall | functionCallStatement }
-block = { (statement ~ statementTerminator?)* }
+block = { (statement ~ nodent?)* }
 naryFunctionDefinition = { "def " ~ id ~ "(" ~ (id ~ (", " ~ id)*)? ~ "):" ~ indent ~ block ~ dedent }
 binaryFunctionDefinition = { "def " ~ id ~ " " ~ op ~ " " ~ id ~ ":" ~ indent ~ block ~ dedent }
 functionDefinition = { naryFunctionDefinition | binaryFunctionDefinition }

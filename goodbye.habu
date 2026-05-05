@@ -1,12 +1,22 @@
 def main():
-    for i in r(0, 1000]:
+    i @ r(0, 1000]
         result = ""
-        if i % 3 =? 0:
-            result += "Fizz"
-        if i % 5 =? 0:
-            result += "Buzz"
-        if len(result) =? 0:
+        i % 3 =? 0 =>
+            result += "Fizz",
+        i % 5 =? 0 =>
+            result += "Buzz",
+        len(result) =? 0 =>
             result = str(i)
         print result
 
 
+def ifs()
+    a =>
+        b =>
+            s,
+        q =>
+            j,
+    c =>
+        t,
+    d =>
+        u
