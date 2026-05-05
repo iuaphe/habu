@@ -9,9 +9,13 @@ pub struct Emitter {
 
 impl Emitter {
     pub fn emit(&mut self, program: &Program) -> String {
-        let mut result = String::new();
+        let mut result = "\
+class Loop:
+    continue_flag = False
+    semaphore = 0
+".to_string();
         for tlo in &program.objects {
-            result += &self.tlo(tlo);
+            result += &(self.tlo(tlo) + "\n");
         }
         result
     }
@@ -26,7 +30,7 @@ impl Emitter {
                     self.block(&function_definition.body)
                 )
             }
-            TopLevelObject::Statement(statement) => todo!(),
+            TopLevelObject::Statement(statement) => self.statement(statement),
         }
     }
 
@@ -91,13 +95,37 @@ impl Emitter {
                 body,
             } => {
                 format!(
-                    "for {} in {}:\n{}",
+                    "for {} in {}:\n{}{}{}{}{}{}{}{}{}{}{}",
                     var,
                     self.expression(iterator),
+                    " ".repeat((self.level+1) * 4),
+                    "if Loop.semaphore:\n",
+                    " ".repeat((self.level+2) * 4),
+                    "Loop.semaphore -= 1\n",
+                    " ".repeat((self.level+2) * 4),
+                    "if not Loop.semaphore and Loop.continue_flag:\n",
+                    " ".repeat((self.level+3) * 4),
+                    "Loop.continue_flag=False;continue\n",
+                    " ".repeat((self.level+2) * 4),
+                    "break\n",
                     self.block(body),
                 )
             }
             Statement::FunctionCall(function_call) => self.function_call(&function_call),
+            Statement::LoopInst{instruction, times} => {
+                let mut text = format!(
+                    "Loop.semaphore = {}",
+                    if let Some(times) = times {
+                        self.expression(times)
+                    } else {
+                        "0".to_string()
+                    }
+                );
+                if instruction == "^" {
+                    text += ";Loop.continue_flag = True";
+                }
+                text + ";continue"
+            }
         }
     }
 
@@ -119,14 +147,23 @@ impl Emitter {
             Expression::Identifier(id) => id.clone(),
             Expression::FunctionCall(function_call) => self.function_call(&function_call),
             Expression::String(string) => string.clone(),
-            Expression::Range { left, right } => {
+            Expression::Range { leftInterval, left, right , rightInterval} => {
                 format!(
                     "range({}, {})",
-                    self.expression(&*left),
-                    self.expression(&*right)
+                    if leftInterval == "[" {
+                        format!("-({}//-1)", self.expression(&*left))
+                    } else {
+                        format!("int({})+1", self.expression(&*left))
+                    },
+                    if rightInterval == "]" {
+                        format!("int({})+1", self.expression(&*right))
+                    } else {
+                        format!("-({}//-1)", self.expression(&*right))
+                    }
                 )
             }
-            Expression::Number(number) => number.to_string(),
+            Expression::Float(number) => number.to_string(),
+            Expression::Integer(number) => number.to_string(),
             Expression::BinaryOperation {
                 left,
                 operator,

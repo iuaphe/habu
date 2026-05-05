@@ -2,9 +2,12 @@ idMidChar = { ASCII_ALPHANUMERIC | "-" | "'" | "_" | "苹果"}
 idEndChar = { ASCII_ALPHA }
 idSuffix = { idMidChar ~ idSuffix | idEndChar }
 id = { idEndChar ~ idSuffix? }
-number = { NUMBER+ }
+integer = { NUMBER+ }
+float = { NUMBER* ~ "." ~ NUMBER* }
 string = { "\"" ~ ASCII_ALPHA* ~ "\""}
-range = { "r" ~ ("[" | "(") ~ expr ~ ", " ~ expr ~ ("]" | ")") }
+rangeOpen = {"[" | "("}
+rangeClose = {"]" | ")"}
+range = { "r" ~ rangeOpen ~ expr ~ ", " ~ expr ~ rangeClose }
 whitespace = _{ " " | "\n" | "\r" }
 
 //indent = _{"[INDENT]"}
@@ -16,7 +19,7 @@ nodent = _{ whitespace* ~ "[NODENT]" ~ whitespace* }
 opChar = { "!" | "@" | "#" | "$" | "%" | "^" | "&" | "*" | ";" | "/" | "?" | "|" | "`" | "~" | ">" | "<" | "+" | "-" | "=" }
 op = { (!("= ") ~ opChar)+ } //this specific white space dependency seems tricky to get rid of
 grouping = { "(" ~ expr ~ ")" }
-exprAtom = { functionCall | string | range | grouping | id | number }
+exprAtom = { functionCall | string | range | grouping | id | float | integer }
 preOpExpr = { op ~ exprAtom ~ (" " ~ op ~ " " ~ expr)?  }
 sufOpExpr = { exprAtom ~ op ~ (" " ~ op ~ " " ~ expr)?  }
 bareExpr = { exprAtom ~ (" " ~ op ~ " " ~ expr)?  }
@@ -28,10 +31,12 @@ functionCall = { id ~ "(" ~ expressionList ~ ")"}
 functionCallStatement = { id ~ (" " ~ expressionList)? }
 ifStatement = { (expr ~ " =>" ~ indent ~ block ~ "," ~ dedent ~ &(expr ~ " =>" ~ indent ~ block ~ "," ~ dedent))* ~ (expr ~ " =>" ~ indent ~ block ~ dedent)}
 forLoop = { id ~ (", " ~ id)* ~ " @ " ~ expr ~ indent ~ block ~ dedent }
-statement = { ifStatement | forLoop | declaration | assignment | functionCall | functionCallStatement }
+loopInstType = {"^" | ">"}
+loopInst = {loopInstType ~ expr?}
+statement = { ifStatement | forLoop | declaration | assignment | functionCall | functionCallStatement | loopInst}
 block = { (statement ~ nodent?)* }
 naryFunctionDefinition = { "def " ~ id ~ "(" ~ (id ~ (", " ~ id)*)? ~ "):" ~ indent ~ block ~ dedent }
 binaryFunctionDefinition = { "def " ~ id ~ " " ~ op ~ " " ~ id ~ ":" ~ indent ~ block ~ dedent }
 functionDefinition = { naryFunctionDefinition | binaryFunctionDefinition }
 topLevelObject = { functionDefinition | statement }
-program = { SOI ~ nodent ~ topLevelObject+ ~ EOI }
+program = { SOI ~ (nodent ~ topLevelObject)+ ~ EOI }

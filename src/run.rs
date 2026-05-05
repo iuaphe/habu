@@ -12,7 +12,8 @@ pub fn run(program: Program) -> io::Result<()> {
     let python_source = emitter.emit(&program);
 
     writeln!(python_file, "{}", python_source)?;
-    writeln!(python_file, "main()")?;
+    println!("{}", python_source);
+    // writeln!(python_file, "main()")?;
 
     let output = Command::new("python3").arg(python_file.path()).output()?;
 

@@ -95,6 +95,7 @@ pub enum Statement {
         body: Block,
     },
     FunctionCall(FunctionCall),
+    LoopInst{instruction: String, times: Option<Expression>},
 }
 
 #[derive(Debug)]
@@ -115,10 +116,13 @@ pub enum Expression {
     FunctionCall(FunctionCall),
     String(String),
     Range {
+        leftInterval: String,
         left: Box<Expression>,
         right: Box<Expression>,
+        rightInterval: String,
     },
-    Number(i32),
+    Float(f64),
+    Integer(i64),
     BinaryOperation {
         left: Box<Expression>,
         operator: String,
@@ -135,6 +139,7 @@ pub fn parse_program_from_source(
     source_contents: &String,
 ) -> Result<Program, pest::error::Error<Rule>> {
     let source_contents = insert_dents(&source_contents);
+    // println!("{}", source_contents);
     let mut pairs = ProgramParser::parse(Rule::program, &source_contents)?;
     let pair = pairs.next().expect("ERROR: Expected token");
     Ok(program(pair))
@@ -291,6 +296,13 @@ fn statement(pair: Pair<Rule>) -> Statement {
         Rule::functionCall | Rule::functionCallStatement => {
             Statement::FunctionCall(function_call(inner))
         }
+        Rule::loopInst => {
+            let mut parts = inner.into_inner();
+            Statement::LoopInst{
+                instruction: parts.next().expect("ERROR: Expected loop instruction token").to_string(),
+                times: parts.next().map(|x| expression(x))
+            }
+        }
         _ => unreachable!(),
     }
 }
@@ -305,13 +317,15 @@ fn expression_atom(pair: Pair<Rule>) -> Expression {
         Rule::string => Expression::String(pair.as_str().to_string()),
         Rule::range => {
             let mut parts = pair.into_inner();
+            let leftInterval = parts.next().expect("ERROR: Expected left range interval token").to_string();
             let left = Box::new(expression(
                 parts.next().expect("ERROR: Expected range left token"),
             ));
             let right = Box::new(expression(
                 parts.next().expect("ERROR: Expected range right token"),
             ));
-            Expression::Range { left, right }
+            let rightInterval = parts.next().expect("ERROR: Expected right range interval token").to_string();
+            Expression::Range { leftInterval, left, right, rightInterval }
         }
         Rule::grouping => expression(
             pair.into_inner()
@@ -319,11 +333,17 @@ fn expression_atom(pair: Pair<Rule>) -> Expression {
                 .expect("ERROR: Expected grouping token"),
         ),
         Rule::id => Expression::Identifier(pair.as_str().to_string()),
-        Rule::number => Expression::Number(
+        Rule::integer => Expression::Integer(
             pair.as_str()
                 .to_string()
-                .parse::<i32>()
-                .expect("ERROR: Expected number token"),
+                .parse::<i64>()
+                .expect("ERROR: Expected integer token"),
+        ),
+        Rule::float => Expression::Float(
+            pair.as_str()
+                .to_string()
+                .parse::<f64>()
+                .expect("ERROR: Expected float token"),
         ),
         _ => unreachable!(),
     }
