@@ -9,13 +9,17 @@ pub struct Emitter {
 
 impl Emitter {
     pub fn emit(&mut self, program: &Program) -> String {
-        let mut result = "\
-class Loop:
-    continue_flag = False
-    semaphore = 0
-".to_string();
+        let mut result = self.indented(
+            vec![
+                "class Loop:",
+                "    continue_flag = False",
+                "    semaphore = 0",
+            ],
+            0,
+        );
         for tlo in &program.objects {
-            result += &(self.tlo(tlo) + "\n");
+            result += &self.tlo(tlo);
+            result += &"\n";
         }
         result
     }
@@ -94,31 +98,48 @@ class Loop:
                 iterator,
                 body,
             } => {
+                // format!(
+                //     "for {} in {}:\n{}{}{}{}{}{}{}{}{}{}{}",
+                //     var,
+                //     self.expression(iterator),
+                //     " ".repeat((self.level + 1) * 4),
+                //     "if Loop.semaphore:\n",
+                //     " ".repeat((self.level + 2) * 4),
+                //     "Loop.semaphore -= 1\n",
+                //     " ".repeat((self.level + 2) * 4),
+                //     "if not Loop.semaphore and Loop.continue_flag:\n",
+                //     " ".repeat((self.level + 3) * 4),
+                //     "Loop.continue_flag=False;continue\n",
+                //     " ".repeat((self.level + 2) * 4),
+                //     "break\n",
+                //     self.block(body),
+                // )
                 format!(
-                    "for {} in {}:\n{}{}{}{}{}{}{}{}{}{}{}",
+                    "for {} in {}:\n{}{}",
                     var,
                     self.expression(iterator),
-                    " ".repeat((self.level+1) * 4),
-                    "if Loop.semaphore:\n",
-                    " ".repeat((self.level+2) * 4),
-                    "Loop.semaphore -= 1\n",
-                    " ".repeat((self.level+2) * 4),
-                    "if not Loop.semaphore and Loop.continue_flag:\n",
-                    " ".repeat((self.level+3) * 4),
-                    "Loop.continue_flag=False;continue\n",
-                    " ".repeat((self.level+2) * 4),
-                    "break\n",
+                    self.indented(
+                        vec![
+                            "if Loop.semaphore > 0:",
+                            "    Loop.semaphore -= 1",
+                            "    if Loop.semaphore == 0 and Loop.continue_flag:",
+                            "        Loop.continue_flag = False",
+                            "        continue",
+                            "    break",
+                        ],
+                        1
+                    ),
                     self.block(body),
                 )
             }
             Statement::FunctionCall(function_call) => self.function_call(&function_call),
-            Statement::LoopInst{instruction, times} => {
+            Statement::LoopInst { instruction, times } => {
                 let mut text = format!(
                     "Loop.semaphore = {}",
                     if let Some(times) = times {
                         self.expression(times)
                     } else {
-                        "0".to_string()
+                        "1".to_string()
                     }
                 );
                 if instruction == "^" {
@@ -147,7 +168,12 @@ class Loop:
             Expression::Identifier(id) => id.clone(),
             Expression::FunctionCall(function_call) => self.function_call(&function_call),
             Expression::String(string) => string.clone(),
-            Expression::Range { leftInterval, left, right , rightInterval} => {
+            Expression::Range {
+                leftInterval,
+                left,
+                right,
+                rightInterval,
+            } => {
                 format!(
                     "range({}, {})",
                     if leftInterval == "[" {
@@ -192,12 +218,28 @@ class Loop:
     }
 
     fn operator_map() -> HashMap<String, String> {
-        let replacements = [("=?", "=="), ("=/", "!="), (">_", ">="), ("<_", "<="), ("&|", "^"), ("|&", "^"), ("^", "**")];
+        let replacements = [
+            ("=?", "=="),
+            ("=/", "!="),
+            (">_", ">="),
+            ("<_", "<="),
+            ("&|", "^"),
+            ("|&", "^"),
+            ("^", "**"),
+        ];
         let mut map = HashMap::new();
         for (from, to) in &replacements {
             map.insert(from.to_string(), to.to_string());
         }
         map
+    }
+
+    fn indented(&mut self, lines: Vec<&str>, offset_level: usize) -> String {
+        lines
+            .iter()
+            .map(|l| " ".repeat((self.level + offset_level) * 4) + l + "\n")
+            .collect::<Vec<String>>()
+            .join("")
     }
 
     pub fn new() -> Emitter {

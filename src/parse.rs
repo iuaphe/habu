@@ -95,7 +95,10 @@ pub enum Statement {
         body: Block,
     },
     FunctionCall(FunctionCall),
-    LoopInst{instruction: String, times: Option<Expression>},
+    LoopInst {
+        instruction: String,
+        times: Option<Expression>,
+    },
 }
 
 #[derive(Debug)]
@@ -298,9 +301,12 @@ fn statement(pair: Pair<Rule>) -> Statement {
         }
         Rule::loopInst => {
             let mut parts = inner.into_inner();
-            Statement::LoopInst{
-                instruction: parts.next().expect("ERROR: Expected loop instruction token").to_string(),
-                times: parts.next().map(|x| expression(x))
+            Statement::LoopInst {
+                instruction: parts
+                    .next()
+                    .expect("ERROR: Expected loop instruction token")
+                    .to_string(),
+                times: parts.next().map(|x| expression(x)),
             }
         }
         _ => unreachable!(),
@@ -317,15 +323,26 @@ fn expression_atom(pair: Pair<Rule>) -> Expression {
         Rule::string => Expression::String(pair.as_str().to_string()),
         Rule::range => {
             let mut parts = pair.into_inner();
-            let leftInterval = parts.next().expect("ERROR: Expected left range interval token").to_string();
+            let leftInterval = parts
+                .next()
+                .expect("ERROR: Expected left range interval token")
+                .to_string();
             let left = Box::new(expression(
                 parts.next().expect("ERROR: Expected range left token"),
             ));
             let right = Box::new(expression(
                 parts.next().expect("ERROR: Expected range right token"),
             ));
-            let rightInterval = parts.next().expect("ERROR: Expected right range interval token").to_string();
-            Expression::Range { leftInterval, left, right, rightInterval }
+            let rightInterval = parts
+                .next()
+                .expect("ERROR: Expected right range interval token")
+                .to_string();
+            Expression::Range {
+                leftInterval,
+                left,
+                right,
+                rightInterval,
+            }
         }
         Rule::grouping => expression(
             pair.into_inner()

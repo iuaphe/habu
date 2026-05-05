@@ -11,6 +11,7 @@ pub fn run(program: Program) -> io::Result<()> {
     let mut emitter = Emitter::new();
     let python_source = emitter.emit(&program);
 
+    println!("{}", python_source);
     writeln!(python_file, "{}", python_source)?;
     println!("{}", python_source);
     // writeln!(python_file, "main()")?;
