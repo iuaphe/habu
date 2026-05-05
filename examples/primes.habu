@@ -3,4 +3,5 @@ k @ r[2, 100]
     f @ r[2, k^0.5]
         k % f ?= 0 =>
             continue 2
-    print "The {i += 1}-th prime is {k}"
+    i += 1
+    print "The {i}-th prime is {k}"
