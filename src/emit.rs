@@ -142,17 +142,17 @@ impl Emitter {
                     .as_ref()
                     .map(|e| self.expression(&e))
                     .unwrap_or("1".to_string());
-                let mut result = format!("times = {times}\n");
+                let mut result = format!("Loop.semaphore = {times}\n");
                 result += &self.indented(
                     vec![
-                        "if times == 1:",
+                        "if Loop.semaphore == 1:",
                         if instruction == "^" {
                             "   continue"
                         } else {
                             "    break "
                         },
                         "else:",
-                        "    Loop.semaphore = times - 1",
+                        "    Loop.semaphore -= 1",
                         &format!(
                             "    Loop.continue_flag = {}",
                             if instruction == "^" { "True" } else { "False " }
