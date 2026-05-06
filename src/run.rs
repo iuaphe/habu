@@ -13,7 +13,6 @@ pub fn run(program: Program) -> io::Result<()> {
 
     println!("{}", python_source);
     writeln!(python_file, "{}", python_source)?;
-    println!("{}", python_source);
     // writeln!(python_file, "main()")?;
 
     let output = Command::new("python3").arg(python_file.path()).output()?;

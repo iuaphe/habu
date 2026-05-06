@@ -118,34 +118,50 @@ impl Emitter {
                     "for {} in {}:\n{}{}",
                     var,
                     self.expression(iterator),
-                    self.indented(
-                        vec![
-                            "if Loop.semaphore > 0:",
-                            "    Loop.semaphore -= 1",
-                            "    if Loop.semaphore == 0 and Loop.continue_flag:",
-                            "        Loop.continue_flag = False",
-                            "        continue",
-                            "    break",
-                        ],
-                        1
-                    ),
                     self.block(body),
+                    if self.level > 0 {
+                        self.indented(
+                            vec![
+                                "if Loop.semaphore > 0:",
+                                "    Loop.semaphore -= 1",
+                                "    if Loop.semaphore == 0 and Loop.continue_flag:",
+                                "        Loop.continue_flag = False",
+                                "        continue",
+                                "    break",
+                            ],
+                            0,
+                        )
+                    } else {
+                        "".to_string()
+                    }
                 )
             }
             Statement::FunctionCall(function_call) => self.function_call(&function_call),
             Statement::LoopInst { instruction, times } => {
-                let mut text = format!(
-                    "Loop.semaphore = {}",
-                    if let Some(times) = times {
-                        self.expression(times)
-                    } else {
-                        "1".to_string()
-                    }
+                let times = times
+                    .as_ref()
+                    .map(|e| self.expression(&e))
+                    .unwrap_or("1".to_string());
+                let mut result = format!("times = {times}\n");
+                result += &self.indented(
+                    vec![
+                        "if times == 1:",
+                        if instruction == "^" {
+                            "   continue"
+                        } else {
+                            "    break "
+                        },
+                        "else:",
+                        "    Loop.semaphore = times - 1",
+                        &format!(
+                            "    Loop.continue_flag = {}",
+                            if instruction == "^" { "True" } else { "False " }
+                        ),
+                        "    break",
+                    ],
+                    0,
                 );
-                if instruction == "^" {
-                    text += ";Loop.continue_flag = True";
-                }
-                text + ";continue"
+                result
             }
         }
     }
