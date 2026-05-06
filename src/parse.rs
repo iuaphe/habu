@@ -1,5 +1,6 @@
 use pest::{Parser, iterators::Pair};
 use pest_derive::Parser;
+use strum::EnumString;
 
 #[derive(Parser)]
 #[grammar = "habu.pest"]
@@ -73,6 +74,14 @@ pub struct Block {
     pub statements: Vec<Statement>,
 }
 
+#[derive(Debug, EnumString, PartialEq)]
+pub enum BreakOrCont {
+    #[strum(serialize = ">")]
+    Break,
+    #[strum(serialize = "^")]
+    Cont,
+}
+
 #[derive(Debug)]
 pub enum Statement {
     Assignment {
@@ -96,7 +105,7 @@ pub enum Statement {
     },
     FunctionCall(FunctionCall),
     LoopInst {
-        instruction: String,
+        instruction: BreakOrCont,
         times: Option<Expression>,
     },
 }
@@ -119,10 +128,10 @@ pub enum Expression {
     FunctionCall(FunctionCall),
     String(String),
     Range {
-        leftInterval: String,
+        left_interval: String,
         left: Box<Expression>,
         right: Box<Expression>,
-        rightInterval: String,
+        right_interval: String,
     },
     Float(f64),
     Integer(i64),
@@ -305,7 +314,9 @@ fn statement(pair: Pair<Rule>) -> Statement {
                 instruction: parts
                     .next()
                     .expect("ERROR: Expected loop instruction token")
-                    .to_string(),
+                    .as_str()
+                    .parse::<BreakOrCont>()
+                    .expect("Invalid loop instruction symbol again somehow"),
                 times: parts.next().map(|x| expression(x)),
             }
         }
@@ -323,7 +334,7 @@ fn expression_atom(pair: Pair<Rule>) -> Expression {
         Rule::string => Expression::String(pair.as_str().to_string()),
         Rule::range => {
             let mut parts = pair.into_inner();
-            let leftInterval = parts
+            let left_interval = parts
                 .next()
                 .expect("ERROR: Expected left range interval token")
                 .to_string();
@@ -333,15 +344,15 @@ fn expression_atom(pair: Pair<Rule>) -> Expression {
             let right = Box::new(expression(
                 parts.next().expect("ERROR: Expected range right token"),
             ));
-            let rightInterval = parts
+            let right_interval = parts
                 .next()
                 .expect("ERROR: Expected right range interval token")
                 .to_string();
             Expression::Range {
-                leftInterval,
+                left_interval,
                 left,
                 right,
-                rightInterval,
+                right_interval,
             }
         }
         Rule::grouping => expression(

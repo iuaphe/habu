@@ -1,0 +1,10 @@
+x = 4
+!(x =? 2 | x =? 3 | x =? 5 | x =? 7) =>
+    x =? 4 | x =? 9 =>
+        print "perfect square",
+    x =? 8 =>
+        print "perfect cube",
+    1 =>
+        print "perfect",
+1 =>
+    print "prime"

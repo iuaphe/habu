@@ -34,11 +34,12 @@ assignment = {id ~ " " ~ op? ~ "= " ~ expr }
 expressionList = { (expr ~ (", " ~ expr)*)? }
 functionCall = { id ~ "(" ~ expressionList ~ ")"}
 functionCallStatement = { id ~ (" " ~ expressionList)? }
-ifStatement = { (expr ~ " =>" ~ indent ~ block ~ "," ~ dedent ~ &(expr ~ " =>" ~ indent ~ block ~ "," ~ dedent))* ~ (expr ~ " =>" ~ indent ~ block ~ dedent)}
+case = _{expr ~ " =>" ~ indent ~ block}
+ifStatement = { case ~ ("," ~ dedent ~ ifStatement)? }
 forLoop = { id ~ (", " ~ id)* ~ " @ " ~ expr ~ indent ~ block ~ dedent }
 loopInstType = {"^" | ">"}
 loopInst = {loopInstType ~ expr?}
-statement = { ifStatement | forLoop | declaration | assignment | functionCall | functionCallStatement | loopInst}
+statement = { ifStatement ~ dedent | forLoop | declaration | assignment | functionCall | functionCallStatement | loopInst}
 
 //blocky thingies
 block = { (statement ~ nodent?)* }

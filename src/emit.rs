@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::parse::{Block, Expression, FunctionCall, Program, Statement, TopLevelObject};
+use crate::parse::{Block, Expression, FunctionCall, Program, Statement, TopLevelObject, BreakOrCont};
 
 pub struct Emitter {
     operator_map: HashMap<String, String>,
@@ -93,27 +93,7 @@ impl Emitter {
                     format!("if {}:\n{}", self.expression(cond), self.block(then),)
                 }
             }
-            Statement::ForStatement {
-                var,
-                iterator,
-                body,
-            } => {
-                // format!(
-                //     "for {} in {}:\n{}{}{}{}{}{}{}{}{}{}{}",
-                //     var,
-                //     self.expression(iterator),
-                //     " ".repeat((self.level + 1) * 4),
-                //     "if Loop.semaphore:\n",
-                //     " ".repeat((self.level + 2) * 4),
-                //     "Loop.semaphore -= 1\n",
-                //     " ".repeat((self.level + 2) * 4),
-                //     "if not Loop.semaphore and Loop.continue_flag:\n",
-                //     " ".repeat((self.level + 3) * 4),
-                //     "Loop.continue_flag=False;continue\n",
-                //     " ".repeat((self.level + 2) * 4),
-                //     "break\n",
-                //     self.block(body),
-                // )
+            Statement::ForStatement { var, iterator, body } => {
                 format!(
                     "for {} in {}:\n{}{}",
                     var,
@@ -138,30 +118,13 @@ impl Emitter {
             }
             Statement::FunctionCall(function_call) => self.function_call(&function_call),
             Statement::LoopInst { instruction, times } => {
-                let times = times
-                    .as_ref()
-                    .map(|e| self.expression(&e))
-                    .unwrap_or("1".to_string());
-                let mut result = format!("Loop.semaphore = {times}\n");
-                result += &self.indented(
-                    vec![
-                        "if Loop.semaphore == 1:",
-                        if instruction == "^" {
-                            "   continue"
-                        } else {
-                            "    break "
-                        },
-                        "else:",
-                        "    Loop.semaphore -= 1",
-                        &format!(
-                            "    Loop.continue_flag = {}",
-                            if instruction == "^" { "True" } else { "False " }
-                        ),
-                        "    break",
-                    ],
-                    0,
-                );
-                result
+                let times_val = times.as_ref().map(|e| self.expression(&e));
+                match (times_val.as_deref(), instruction) {
+                    (None, BreakOrCont::Break) | (Some("1"), BreakOrCont::Break) => "break".to_string(),
+                    (None, BreakOrCont::Cont) | (Some("1"), BreakOrCont::Cont) => "continue".to_string(),
+                    (Some(t), BreakOrCont::Break) => format!("Loop.semaphore = {t} - 1;break"),
+                    (Some(t), BreakOrCont::Cont) => format!("Loop.semaphore = {t} - 1;Loop.continue_flag = True;break"),
+                }
             }
         }
     }
@@ -185,10 +148,10 @@ impl Emitter {
             Expression::FunctionCall(function_call) => self.function_call(&function_call),
             Expression::String(string) => string.clone(),
             Expression::Range {
-                leftInterval,
+                left_interval: leftInterval,
                 left,
                 right,
-                rightInterval,
+                right_interval: rightInterval,
             } => {
                 format!(
                     "range({}, {})",
