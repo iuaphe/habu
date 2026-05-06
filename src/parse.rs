@@ -142,7 +142,7 @@ pub fn parse_program_from_source(
     source_contents: &String,
 ) -> Result<Program, pest::error::Error<Rule>> {
     let source_contents = insert_dents(&source_contents);
-    // println!("{}", source_contents);
+    println!("{}", source_contents);
     let mut pairs = ProgramParser::parse(Rule::program, &source_contents)?;
     let pair = pairs.next().expect("ERROR: Expected token");
     Ok(program(pair))

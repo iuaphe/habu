@@ -1,3 +1,10 @@
+//whitespace
+whitespace = _{ " " | "\n" | "\r" }
+indent = _{ whitespace* ~ "[INDENT]" ~ whitespace* }
+dedent = _{ whitespace* ~ "[DEDENT]" ~ whitespace* }
+nodent = _{ whitespace* ~ "[NODENT]" ~ whitespace* }
+
+//vars + literals
 idMidChar = { ASCII_ALPHANUMERIC | "-" | "'" | "_" | "苹果"}
 idEndChar = { ASCII_ALPHA }
 idSuffix = { idMidChar ~ idSuffix | idEndChar }
@@ -5,17 +12,13 @@ id = { idEndChar ~ idSuffix? }
 integer = { NUMBER+ }
 float = { NUMBER* ~ "." ~ NUMBER* }
 string = { "\"" ~ ASCII_ALPHA* ~ "\""}
+
+//inbuilts
 rangeOpen = {"[" | "("}
 rangeClose = {"]" | ")"}
 range = { "r" ~ rangeOpen ~ expr ~ ", " ~ expr ~ rangeClose }
-whitespace = _{ " " | "\n" | "\r" }
 
-//indent = _{"[INDENT]"}
-//dedent = _{"[DEDENT]"}
-//nodent = _{"[NODENT]"}
-indent = _{ whitespace* ~ "[INDENT]" ~ whitespace* }
-dedent = _{ whitespace* ~ "[DEDENT]" ~ whitespace* }
-nodent = _{ whitespace* ~ "[NODENT]" ~ whitespace* }
+//expressions
 opChar = { "!" | "@" | "#" | "$" | "%" | "^" | "&" | "*" | ";" | "/" | "?" | "|" | "`" | "~" | ">" | "<" | "+" | "-" | "=" }
 op = { (!("= ") ~ opChar)+ } //this specific white space dependency seems tricky to get rid of
 grouping = { "(" ~ expr ~ ")" }
@@ -24,6 +27,8 @@ preOpExpr = { op ~ exprAtom ~ (" " ~ op ~ " " ~ expr)?  }
 sufOpExpr = { exprAtom ~ op ~ (" " ~ op ~ " " ~ expr)?  }
 bareExpr = { exprAtom ~ (" " ~ op ~ " " ~ expr)?  }
 expr = { preOpExpr | sufOpExpr | bareExpr }
+
+//statements
 declaration = { "let " ~ id ~ (" = " ~ expr)? }
 assignment = {id ~ " " ~ op? ~ "= " ~ expr }
 expressionList = { (expr ~ (", " ~ expr)*)? }
@@ -34,6 +39,8 @@ forLoop = { id ~ (", " ~ id)* ~ " @ " ~ expr ~ indent ~ block ~ dedent }
 loopInstType = {"^" | ">"}
 loopInst = {loopInstType ~ expr?}
 statement = { ifStatement | forLoop | declaration | assignment | functionCall | functionCallStatement | loopInst}
+
+//blocky thingies
 block = { (statement ~ nodent?)* }
 naryFunctionDefinition = { "def " ~ id ~ "(" ~ (id ~ (", " ~ id)*)? ~ "):" ~ indent ~ block ~ dedent }
 binaryFunctionDefinition = { "def " ~ id ~ " " ~ op ~ " " ~ id ~ ":" ~ indent ~ block ~ dedent }

@@ -5,5 +5,5 @@ i @ r(0, 1000]
     i % 5 =? 0 =>
         result += "Buzz",
     len(result) =? 0 =>
-        result = str(i)
+        result = i
     print result
